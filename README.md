@@ -1,14 +1,14 @@
-# An lv2 host and a Bela example program
+# An lv2 host and a Bela example program
 
 Pre-requisites:
 - for the host `liblilv-dev`. 
 - for the example, add: `calf-plugins`
 - for convenience, add: `lilv-utils`
 
-### Bela setup
+### Bela setup
 
 With internet access on the board do:
-````
+```
 apt-get install liblilv-dev calf-plugins lilv-utils
 ```
 
