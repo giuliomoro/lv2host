@@ -18,10 +18,7 @@ download https://raw.githubusercontent.com/giuliomoro/bela-random/master/cross-a
 ./cross-apt-get-install.sh liblilv-dev calf-plugins lilv-utils
 ```
 
-Build and run the Bela program. From the IDE it shoudl just work. At the command line, youshould specify the extra library:
+Build and run the Bela program. From the IDE it should just work. At the command line, you should specify the extra library:
 ```
 make -C ~/Bela PROJECT=lv2host LDFLAGS=-llilv-0 run
 ```
-
-
-
