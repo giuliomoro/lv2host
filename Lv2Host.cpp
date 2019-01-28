@@ -152,3 +152,29 @@ int Lv2Host::setPort(unsigned int slotN, unsigned int portN, float value)
 	port->value = value;
 	return 0;
 }
+
+int Lv2Host::countPorts(unsigned int slotN)
+{
+	auto slot = slots[slotN];
+	return slot->n_ports;
+}
+
+struct portDesc Lv2Host::getPortDesc(unsigned int slotNumber, unsigned int portNumber)
+{
+	portDesc newPortDesc;
+	auto slot = slots[slotNumber];
+
+	newPortDesc.name =  LV2Apply_getPortName(slot, portNumber);
+	newPortDesc.type = LV2Apply_getControlPortType(slot,  world, portNumber);
+	LV2Apply_getPortRanges(slot, portNumber, &newPortDesc.min, &newPortDesc.max, &newPortDesc.defaultVal);
+	newPortDesc.isLogarithmic = LV2Apply_isLogarithmic(slot, world, portNumber);
+	newPortDesc.hasStrictBounds= LV2Apply_hasStrictBounds(slot, world, portNumber);
+
+	return newPortDesc;
+}
+
+const char* Lv2Host::getPluginName(unsigned int slotN)
+{
+	auto slot = slots[slotN];
+	return LV2Apply_getPluginName(slot);
+}
