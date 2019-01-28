@@ -592,3 +592,132 @@ void LV2Apply_connectPorts(LV2Apply* self)
 		}
 	}
 }
+
+void LV2Apply_getPortRanges(LV2Apply* self, unsigned int index, float* min, float* max, float* defaultValue)
+{
+	const LilvPlugin* plugin = self->plugin;
+	const uint32_t num_ports = lilv_plugin_get_num_ports(plugin);
+	if(index >= num_ports)
+		return;
+	float* mins     = (float*)calloc(num_ports, sizeof(float));
+	float* maxes    = (float*)calloc(num_ports, sizeof(float));
+	float* defaults = (float*)calloc(num_ports, sizeof(float));
+	lilv_plugin_get_port_ranges_float(plugin, mins, maxes, defaults);
+
+	*min = mins[index];
+	*max = maxes[index];
+	*defaultValue = defaults[index];
+
+	free(mins);
+	free(maxes);
+	free(defaults);
+}
+
+const char* LV2Apply_getPortName(LV2Apply* self, unsigned int index)
+{
+	const LilvPlugin* plugin = self->plugin;
+	const LilvPort* port = lilv_plugin_get_port_by_index(plugin, index);
+	if (!port)
+		return NULL;
+	LilvNode* name = lilv_port_get_name(plugin, port);
+	const char* ret = lilv_node_as_string(name);
+	lilv_node_free(name);
+
+	return ret;
+}
+
+port_type_t LV2Apply_getControlPortType(LV2Apply* self, LilvWorld* world, unsigned int index)
+{
+
+	LilvNode* control_class = lilv_new_uri(world, LILV_URI_CONTROL_PORT);
+	LilvNode* input_class = lilv_new_uri(world, LILV_URI_INPUT_PORT);
+
+	LilvNode* enum_property = lilv_new_uri(world, "http://lv2plug.in/ns/lv2core#enumeration");
+	LilvNode* int_property= lilv_new_uri(world, "http://lv2plug.in/ns/lv2core#integer");
+	LilvNode* toggled_property= lilv_new_uri(world, "http://lv2plug.in/ns/lv2core#toggled");
+
+	const LilvPlugin* plugin = self->plugin;
+	const LilvPort* port = lilv_plugin_get_port_by_index(plugin, index);
+	if (!port)
+		return kNotControl;
+	if (!lilv_port_is_a(plugin, port, input_class))
+		return kNotControl;
+	if (!lilv_port_is_a(plugin, port, control_class))
+		return kNotControl;
+
+	port_type_t retVal = kFloat;
+	if(lilv_port_has_property(plugin, port, toggled_property))
+	{
+		retVal = kToggle;
+	}
+	else if (lilv_port_has_property(plugin, port, enum_property))
+	{
+		retVal = kEnumerated;
+	}
+	else if (lilv_port_has_property(plugin, port, int_property))
+	{
+		retVal = kInteger;
+	};
+
+
+	lilv_node_free(control_class);
+	lilv_node_free(input_class);
+	lilv_node_free(enum_property);
+	lilv_node_free(int_property);
+	lilv_node_free(toggled_property);
+
+	return retVal;
+}
+
+int LV2Apply_getPortIndex(LV2Apply* self, LilvWorld* world, char* symbol)
+{
+	const LilvPlugin* plugin = self->plugin;
+	LilvNode* symbol_node = lilv_new_string(world, symbol);
+	const LilvPort* port = lilv_plugin_get_port_by_symbol(plugin, symbol_node);
+	int index = lilv_port_get_index(plugin, port);
+	lilv_node_free(symbol_node);
+	return index;
+}
+
+bool LV2Apply_isLogarithmic(LV2Apply* self, LilvWorld* world, unsigned int index)
+{
+	LilvNode* log_property = lilv_new_uri(world, "http://lv2plug.in/ns/ext/port-props#logarithmic");
+
+	const LilvPlugin* plugin = self->plugin;
+	const LilvPort* port = lilv_plugin_get_port_by_index(plugin, index);
+
+	bool ret = false;
+	if(lilv_port_has_property(plugin, port, log_property))
+		ret = true;
+
+	lilv_node_free(log_property);
+
+	return ret;
+}
+
+bool LV2Apply_hasStrictBounds(LV2Apply* self, LilvWorld* world, unsigned int index)
+{
+	LilvNode* strict_property = lilv_new_uri(world, "http://lv2plug.in/ns/ext/port-props#hasStrictBounds");
+
+	const LilvPlugin* plugin = self->plugin;
+	const LilvPort* port = lilv_plugin_get_port_by_index(plugin, index);
+
+	bool ret = false;
+	if(lilv_port_has_property(plugin, port, strict_property))
+		ret = true;
+
+	lilv_node_free(strict_property);
+
+	return ret;
+}
+
+const char* LV2Apply_getPluginName(LV2Apply* self)
+{
+	const LilvPlugin* plugin = self->plugin;
+	const LilvNode* plugin_name = lilv_plugin_get_name(plugin); 
+	const char* name = lilv_node_as_string(name);
+	lilv_node_free(plugin_name);
+
+	return name;
+
+}
