@@ -496,6 +496,7 @@ print_plugin(LilvWorld*        world,
 	}
 	lilv_nodes_free(presets);
 
+#ifdef VERBOSE
 	/* Ports */
 
 	const uint32_t num_ports = lilv_plugin_get_num_ports(p);
@@ -511,6 +512,7 @@ print_plugin(LilvWorld*        world,
 	free(mins);
 	free(maxes);
 	free(defaults);
+#endif /* VERBOSE */
 }
 void LV2Apply_printPorts(LilvWorld* world, const LilvPlugin* p)
 {
