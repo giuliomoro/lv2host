@@ -6,8 +6,11 @@
 #include <string.h>
 #include <OnePole.h>
 #include <Gpio.h>
+#include <Scope.h>
 
 Lv2Host gLv2Host;
+
+Scope scope;
 
 OnePole LpFilters[4];
 float gLpFiltF0 = 100; // LP filter frequency
@@ -100,24 +103,24 @@ bool setup(BelaContext* context, void* userData)
 
 	gLv2Host.setPort(1, 4, 1); // Bypass
 	gLv2Host.setPort(1, 5, 1); // Input
-	gLv2Host.setPort(1, 10, 1); // Threshold
+	gLv2Host.setPort(1, 10, 0.01); // Threshold
 	gLv2Host.setPort(1, 11, 6); // Ratio
-	gLv2Host.setPort(1, 12, 5); // Attack
+	gLv2Host.setPort(1, 12, 1); // Attack
 	gLv2Host.setPort(1, 13, 40); // Release
 	gLv2Host.setPort(1, 14, 1); // Makeup Gain
-	gLv2Host.setPort(1, 15, 1); // Knee
+	gLv2Host.setPort(1, 15, 5); // Knee
 	gLv2Host.setPort(1, 16, 1); // Detection
 	gLv2Host.setPort(1, 17, 1); // Stereo Link
 	gLv2Host.setPort(1, 19, 0.9); // Mix
 
 
+	scope.setup(4, context->audioSampleRate);
 	return true;
 }
 
 void render(BelaContext* context, void* userData)
 {
-	static int count = 0;
-	static bool pluginsOn[2] = {true, true};
+	static bool pluginsOn[2] = {false, false};
 	// Set control values 
 	for(unsigned int n = 0; n < context->audioFrames; n++) {
 		
@@ -141,9 +144,9 @@ void render(BelaContext* context, void* userData)
 		float gateRatioVal = processPot(1, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[1]), 0.0, 10.0);
 		gLv2Host.setPort(0, 14, gateRatioVal);
 		
-		// Pot 2 -- Compressor Drive (input gain)
-		float compInputVal = processPot(2, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[2]), 0.0, 2.5);
-		gLv2Host.setPort(1, 5, compInputVal);
+		// Pot 2 -- Compressor Drive (threshold)
+		float compInputVal = processPot(2, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[2]), 0.0, 1.0);
+		gLv2Host.setPort(1, 10, compInputVal);
 		if(compInputVal == 0.0 && pluginsOn[1]) {
 			gLv2Host.setPort(1, 4, 1);
 			rt_printf("Compressor OFF\n");
@@ -154,11 +157,10 @@ void render(BelaContext* context, void* userData)
 			pluginsOn[1] = true;
 		}
 		// Pot 3 -- Compressor Release
-		float compReleaseVal = processPot(3, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[3]), 0.0, 2000);
+		float compReleaseVal = processPot(3, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[3]), 0.01, 1999);
 		gLv2Host.setPort(1, 13, compReleaseVal);
 		
-			
-		count++;
+		scope.log(audioReadNI(context, n, 0), context->audioOut[context->audioFrames*0+n], gLv2Host.getPortValue(1, 18), gLv2Host.getPortValue(1, 10));
 		
 	}
 
