@@ -26,6 +26,7 @@ public:
 	const char* getPluginName(unsigned int slotN);
 	/// set the value of a control port
 	int setPort(unsigned int slotN, unsigned int port, float value);
+	float getPortValue(unsigned int slotN, unsigned int portN);
 	int countPorts(unsigned int slotN);
 	struct portDesc getPortDesc(unsigned int slotNumber, unsigned int portNumber);
 	/** process the effect chain

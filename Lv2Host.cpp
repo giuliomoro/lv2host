@@ -153,6 +153,29 @@ int Lv2Host::setPort(unsigned int slotN, unsigned int portN, float value)
 	return 0;
 }
 
+float Lv2Host::getPortValue(unsigned int slotN, unsigned int portN)
+{
+	if(slots.size() <= slotN)
+	{
+		return 0;
+	}
+	if(nullptr == slots[slotN])
+	{
+		return 0;
+	}
+	auto slot = slots[slotN];
+	if(slot->n_ports <= portN)
+	{
+		return 0;
+	}
+	auto port = &slot->ports[portN];
+	if(port->type != TYPE_CONTROL)
+	{
+		return 0;
+	}
+	return port->value;
+}
+
 int Lv2Host::countPorts(unsigned int slotN)
 {
 	auto slot = slots[slotN];
