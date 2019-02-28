@@ -124,7 +124,7 @@ void render(BelaContext* context, void* userData)
 		digitalWrite(context, n, 0, 1); //Turn LED on
 
 		// Pot 0 -- Gate Threshold
-		float gateThresholdVal = processPot(0, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[0]), 0.0, 1.0);
+		float gateThresholdVal = processPot(0, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[0]), 0.0, 0.5);
 		gLv2Host.setPort(0, 13, gateThresholdVal);
 
 		if(gateThresholdVal == 0.0 && pluginsOn[0]) {
