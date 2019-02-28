@@ -36,6 +36,8 @@ static LilvNode* preset_class        = NULL;
 static LilvNode* designation_pred    = NULL;
 static LilvNode* supports_event_pred = NULL;
 
+#define VERBOSE
+
 static void
 print_port(const LilvPlugin* p,
            uint32_t          index,
