@@ -80,7 +80,7 @@ bool setup(BelaContext* context, void* userData)
 
 	// Gate
 
-	gLv2Host.setPort(0, 6, 0); // Bypass
+	gLv2Host.setPort(0, 6, 1); // Bypass
 	gLv2Host.setPort(0, 7, 1); // Input
 	gLv2Host.setPort(0, 12, 0.06); // Max Gain Reduction
 	gLv2Host.setPort(0, 13, 0.07); // Threshold
@@ -115,55 +115,51 @@ bool setup(BelaContext* context, void* userData)
 
 
 	scope.setup(4, context->audioSampleRate);
+	
+	// Turn LED on
+	digitalWrite(context, 0, 0, 1); //Turn LED on
+
 	return true;
 }
 
 void render(BelaContext* context, void* userData)
 {
 	static bool pluginsOn[2] = {false, false};
+
 	// Set control values 
-	for(unsigned int n = 0; n < context->audioFrames; n++) {
-		
-		digitalWrite(context, n, 0, 1); //Turn LED on
+	// Pot 0 -- Gate Threshold
+	float gateThresholdVal = processPot(0, analogReadNI(context, 0, gControlPins[0]), 0.0, 0.5);
+	gLv2Host.setPort(0, 13, gateThresholdVal);
 
-		// Pot 0 -- Gate Threshold
-		float gateThresholdVal = processPot(0, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[0]), 0.0, 0.5);
-		gLv2Host.setPort(0, 13, gateThresholdVal);
-
-		if(gateThresholdVal == 0.0 && pluginsOn[0]) {
-			gLv2Host.setPort(0, 6, 1);
-			rt_printf("Gate OFF\n");
-			pluginsOn[0] = false;
-		} else if (gateThresholdVal > 0.0 && !pluginsOn[0]) {
-			gLv2Host.setPort(0, 6, 0);
-			rt_printf("Gate ON\n");
-			pluginsOn[0] = true;
-		}
-	
-		// Pot 1 -- Gate Ratio
-		float gateRatioVal = processPot(1, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[1]), 0.0, 10.0);
-		gLv2Host.setPort(0, 14, gateRatioVal);
-		
-		// Pot 2 -- Compressor Drive (threshold)
-		float compInputVal = processPot(2, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[2]), 0.0, 1.0);
-		gLv2Host.setPort(1, 10, compInputVal);
-		if(compInputVal == 0.0 && pluginsOn[1]) {
-			gLv2Host.setPort(1, 4, 1);
-			rt_printf("Compressor OFF\n");
-			pluginsOn[1] = false;
-		} else if (compInputVal > 0.0 && !pluginsOn[1]) {
-			gLv2Host.setPort(1, 4, 0);
-			rt_printf("Compressor ON\n");
-			pluginsOn[1] = true;
-		}
-		// Pot 3 -- Compressor Release
-		float compReleaseVal = processPot(3, analogReadNI(context, n/gAudioFramesPerAnalogFrame, gControlPins[3]), 0.01, 1999);
-		gLv2Host.setPort(1, 13, compReleaseVal);
-		
-		scope.log(audioReadNI(context, n, 0), context->audioOut[context->audioFrames*0+n], gLv2Host.getPortValue(1, 18), gLv2Host.getPortValue(1, 10));
-		
+	if(gateThresholdVal == 0.0 && pluginsOn[0]) {
+		gLv2Host.setPort(0, 6, 1);
+		rt_printf("Gate OFF\n");
+		pluginsOn[0] = false;
+	} else if (gateThresholdVal > 0.0 && !pluginsOn[0]) {
+		gLv2Host.setPort(0, 6, 0);
+		rt_printf("Gate ON\n");
+		pluginsOn[0] = true;
 	}
 
+	// Pot 1 -- Gate Ratio
+	float gateRatioVal = processPot(1, analogReadNI(context, 0, gControlPins[1]), 0.0, 10.0);
+	gLv2Host.setPort(0, 14, gateRatioVal);
+	
+	// Pot 2 -- Compressor Drive (threshold)
+	float compInputVal = processPot(2, analogReadNI(context, 0, gControlPins[2]), 0.0, 1.0);
+	gLv2Host.setPort(1, 10, compInputVal);
+	if(compInputVal == 0.0 && pluginsOn[1]) {
+		gLv2Host.setPort(1, 4, 1);
+		rt_printf("Compressor OFF\n");
+		pluginsOn[1] = false;
+	} else if (compInputVal > 0.0 && !pluginsOn[1]) {
+		gLv2Host.setPort(1, 4, 0);
+		rt_printf("Compressor ON\n");
+		pluginsOn[1] = true;
+	}
+	// Pot 3 -- Compressor Release
+	float compReleaseVal = processPot(3, analogReadNI(context, 0, gControlPins[3]), 0.01, 1999);
+	gLv2Host.setPort(1, 13, compReleaseVal);
 
 	// set inputs and outputs: normally you would just do this
 	const float* inputs[context->audioInChannels];
@@ -172,8 +168,11 @@ void render(BelaContext* context, void* userData)
 		inputs[ch] = (float*)&context->audioIn[context->audioFrames * ch];
 	for(unsigned int ch = 0; ch < context->audioOutChannels; ++ch)
 		outputs[ch] = &context->audioOut[context->audioFrames * ch];
-		
-		
+	
+	// Log input, output, compressor's threshold and compressor's gain reduction into scope
+	for(unsigned int n = 0; n < context->audioFrames; n++)
+			scope.log(audioReadNI(context, n, 0), context->audioOut[context->audioFrames*0+n], gLv2Host.getPortValue(1, 18), gLv2Host.getPortValue(1, 10));
+
 	// do the actual processing on the buffers specified above
 	gLv2Host.render(context->audioFrames, inputs, outputs);
 }
