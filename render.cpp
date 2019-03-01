@@ -16,13 +16,14 @@ OnePole LpFilters[4];
 float gLpFiltF0 = 100; // LP filter frequency
 int gControlPins[] = {0, 1, 2, 3};
 int gAudioFramesPerAnalogFrame;
+int gLedPin = 0;
 
 
 float gUpdateInterval = 0.05;
 
 float processPot(unsigned int i, float rawVal, float min, float max)
 {
-	float val = floorf(rawVal * 100) / 100;
+	float val = floorf(rawVal * 100.f) / 100;
 	val = LpFilters[i].process(val);
 	val = map(val, 0.0, 0.82999, min, max); // Potentiometers wired in reverse
 	val = constrain(val, min, max);
@@ -36,9 +37,6 @@ void Bela_userSettings(BelaInitSettings *settings)
 	settings->analogOutputsPersist = 0;
 }
 
-
-
-	
 bool setup(BelaContext* context, void* userData)
 {
 	
@@ -68,15 +66,12 @@ bool setup(BelaContext* context, void* userData)
 		return false;	
 	}
 
-	pinMode(context, 0, 0, OUTPUT); // Set pin 0 as output
-
 	if(context->analogFrames)
 		gAudioFramesPerAnalogFrame = context->audioFrames / context->analogFrames;
-		
 
 	// Setup lp filters for controls	
 	for(unsigned int i = 0; i < sizeof(gControlPins)/sizeof(*gControlPins); i++)
-		LpFilters[i].setup(gLpFiltF0/context->audioSampleRate);
+		LpFilters[i].setup(gLpFiltF0/(context->audioSampleRate/context->analogFrames));
 
 	// Gate
 
@@ -113,11 +108,11 @@ bool setup(BelaContext* context, void* userData)
 	gLv2Host.setPort(1, 17, 1); // Stereo Link
 	gLv2Host.setPort(1, 19, 0.9); // Mix
 
-
 	scope.setup(4, context->audioSampleRate);
 	
 	// Turn LED on
-	digitalWrite(context, 0, 0, 1); //Turn LED on
+	pinMode(context, 0, gLedPin, OUTPUT); // Set pin as output
+	digitalWrite(context, 0, gLedPin, 1); //Turn LED on
 
 	return true;
 }
@@ -161,7 +156,7 @@ void render(BelaContext* context, void* userData)
 	float compReleaseVal = processPot(3, analogReadNI(context, 0, gControlPins[3]), 0.01, 1999);
 	gLv2Host.setPort(1, 13, compReleaseVal);
 
-	// set inputs and outputs: normally you would just do this
+	// set inputs and outputs
 	const float* inputs[context->audioInChannels];
 	float* outputs[context->audioOutChannels];
 	for(unsigned int ch = 0; ch < context->audioInChannels; ++ch)
@@ -169,12 +164,16 @@ void render(BelaContext* context, void* userData)
 	for(unsigned int ch = 0; ch < context->audioOutChannels; ++ch)
 		outputs[ch] = &context->audioOut[context->audioFrames * ch];
 	
-	// Log input, output, compressor's threshold and compressor's gain reduction into scope
-	for(unsigned int n = 0; n < context->audioFrames; n++)
-			scope.log(audioReadNI(context, n, 0), context->audioOut[context->audioFrames*0+n], gLv2Host.getPortValue(1, 18), gLv2Host.getPortValue(1, 10));
-
 	// do the actual processing on the buffers specified above
 	gLv2Host.render(context->audioFrames, inputs, outputs);
+
+	float compThres = gLv2Host.getPortValue(1, 10);
+	float compGainReduction = gLv2Host.getPortValue(1, 18);
+
+	// Log input, output, compressor's threshold and compressor's gain reduction into scope
+	for(unsigned int n = 0; n < context->audioFrames; n++)
+		scope.log(audioReadNI(context, n, 0), context->audioOut[context->audioFrames*0+n], compGainReduction, compThres);
+
 }
 
 void cleanup(BelaContext* context, void* userData) {
