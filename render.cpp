@@ -163,7 +163,7 @@ void render(BelaContext* context, void* userData)
 		inputs[ch] = (float*)&context->audioIn[context->audioFrames * ch];
 	for(unsigned int ch = 0; ch < context->audioOutChannels; ++ch)
 		outputs[ch] = &context->audioOut[context->audioFrames * ch];
-	
+
 	// do the actual processing on the buffers specified above
 	gLv2Host.render(context->audioFrames, inputs, outputs);
 
@@ -179,4 +179,4 @@ void render(BelaContext* context, void* userData)
 void cleanup(BelaContext* context, void* userData) {
 
 }
-	
+
