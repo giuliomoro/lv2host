@@ -1,12 +1,9 @@
 #include <Bela.h>
-#include <Lv2Host.h>
-#include <Gui.h>
-#include <math.h>
 #include <vector>
-#include <string.h>
-#include <OnePole.h>
-#include <Gpio.h>
-#include <Scope.h>
+#include "Lv2Host.h"
+#include <libraries/Gui/Gui.h>
+#include <libraries/OnePole/OnePole.h>
+#include <libraries/Scope/Scope.h>
 
 Lv2Host gLv2Host;
 
@@ -71,7 +68,7 @@ bool setup(BelaContext* context, void* userData)
 
 	// Setup lp filters for controls	
 	for(unsigned int i = 0; i < sizeof(gControlPins)/sizeof(*gControlPins); i++)
-		LpFilters[i].setup(gLpFiltF0/(context->audioSampleRate/context->analogFrames));
+		LpFilters[i].setup(gLpFiltF0, context->audioSampleRate/context->analogFrames);
 
 	// Gate
 
