@@ -26,6 +26,7 @@
 #include "lilv_interface_private.h"
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 
 static LilvNode* applies_to_pred     = NULL;
 static LilvNode* control_class       = NULL;
@@ -718,8 +719,8 @@ bool LV2Apply_hasStrictBounds(LV2Apply* self, LilvWorld* world, unsigned int ind
 const char* LV2Apply_getPluginName(LV2Apply* self)
 {
 	const LilvPlugin* plugin = self->plugin;
-	const LilvNode* plugin_name = lilv_plugin_get_name(plugin); 
-	const char* name = lilv_node_as_string(name);
+	LilvNode* plugin_name = lilv_plugin_get_name(plugin);
+	const char* name = lilv_node_as_string(plugin_name);
 	lilv_node_free(plugin_name);
 
 	return name;
