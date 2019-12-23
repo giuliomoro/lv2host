@@ -17,7 +17,7 @@ typedef enum
 
 typedef struct _lv2apply LV2Apply;
 
-LV2Apply* LV2Apply_instantiatePlugin(LilvWorld* world, const char* plugin_uri, float sampleRate);
+LV2Apply* LV2Apply_instantiatePlugin(LilvWorld* world, const char* plugin_uri, float sampleRate, const LV2_Feature** features);
 LilvWorld* LV2Apply_initializeWorld();
 void LV2Apply_cleanup(LV2Apply* self);
 void LV2Apply_cleanupWorld(LilvWorld* world);

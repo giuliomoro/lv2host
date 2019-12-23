@@ -1,6 +1,10 @@
 #include <vector>
 #include <string>
 #include "lilv_interface.h"
+extern "C"
+{
+#include "symap.h"
+}
 
 struct portDesc
 {
@@ -39,6 +43,12 @@ public:
 private:
 	std::vector<LV2Apply*> slots;
 	LilvWorld* world;
+	Symap* symap;
+	LV2_URID_Map map;
+	LV2_URID_Unmap unmap;
+	LV2_Feature mapFeature;
+	LV2_Feature unmapFeature;
+	std::vector<const LV2_Feature*> featureList;
 	std::vector<std::vector<float>> buffers;
 	float sampleRate;
 	unsigned int maxBlockSize;

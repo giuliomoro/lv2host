@@ -16,6 +16,18 @@ bool Lv2Host::setup(float sampleRate, unsigned int maxBlockSize, unsigned int nA
 	this->sampleRate = sampleRate;
 	this->nAudioInputs = nAudioInputs;
 	this->nAudioOutputs = nAudioOutputs;
+	symap = symap_new();
+	map.handle = symap;
+	map.map = (LV2_URID (*)(LV2_URID_Map_Handle, const char *))symap_map;
+	mapFeature.URI = LV2_URID__map;
+	mapFeature.data = &map;
+	unmap.handle = symap;
+	unmap.unmap = (const char *(*)(LV2_URID_Unmap_Handle, LV2_URID))symap_unmap;
+	unmapFeature.URI = LV2_URID__unmap;
+	unmapFeature.data = &unmap;
+	featureList.push_back(&mapFeature);
+	featureList.push_back(&unmapFeature);
+	featureList.push_back(NULL);
 	return true;
 }
 
@@ -30,7 +42,7 @@ void Lv2Host::cleanup()
 
 int Lv2Host::add(std::string const& pluginUri)
 {
-	auto slot = LV2Apply_instantiatePlugin(world, pluginUri.c_str(), sampleRate);
+	auto slot = LV2Apply_instantiatePlugin(world, pluginUri.c_str(), sampleRate, featureList.data());
 	if(!slot)
 		return -1;
 	slots.push_back(slot);

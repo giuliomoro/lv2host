@@ -237,7 +237,7 @@ create_ports(LV2Apply* self, LilvWorld* world)
 	return 0;
 }
 
-LV2Apply* LV2Apply_instantiatePlugin(LilvWorld* world, const char* plugin_uri, float sampleRate)
+LV2Apply* LV2Apply_instantiatePlugin(LilvWorld* world, const char* plugin_uri, float sampleRate, const LV2_Feature** features)
 {
 	LV2Apply self;
 	memset(&self, 0, sizeof(self));
@@ -296,7 +296,7 @@ LV2Apply* LV2Apply_instantiatePlugin(LilvWorld* world, const char* plugin_uri, f
 
 	/* Instantiate plugin */
 	self.instance = lilv_plugin_instantiate(
-		self.plugin, sampleRate, NULL);
+		self.plugin, sampleRate, features);
 	if(!self.instance) {
 		return fatal(&self, 0, "Unable to instantiate plugin `%s'\n", plugin_uri);
 	}
