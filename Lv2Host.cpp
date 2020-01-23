@@ -106,6 +106,32 @@ bool Lv2Host::connect(unsigned int source, unsigned int dest)
 	LV2Apply_connectPorts(slots[source]);
 }
 #endif
+bool Lv2Host::connect(unsigned int outSlotNumber, unsigned int outputPort, unsigned int inSlotNumber, unsigned int inputPort)
+{
+	try {
+		auto& outSlot = slots[outSlotNumber];
+		auto& inSlot = slots[inSlotNumber];
+		inSlot->in_bufs[inputPort] = outSlot->out_bufs[outputPort];
+	} catch (std::exception e) {
+		return false;
+	}
+	return true;
+}
+
+bool Lv2Host::disconnect(unsigned int inSlotNumber, unsigned int inputPort)
+{
+	try {
+		slots[inSlotNumber]->in_bufs[inputPort] = nullptr;
+	} catch (std::exception e) {
+		return false;
+	}
+	return true;
+}
+
+void Lv2Host::bypass(unsigned int slotNumber, bool bypassed)
+{
+	slots[slotNumber]->bypass = bypassed;
+}
 
 void Lv2Host::render(unsigned int nFrames, const float** inputs, float** outputs)
 {
@@ -125,7 +151,8 @@ void Lv2Host::render(unsigned int nFrames, const float** inputs, float** outputs
 		}
 		for(auto& slot : slots)
 		{
-			lilv_instance_run(slot->instance, nFrames);
+			if(!slot->bypass)
+				lilv_instance_run(slot->instance, nFrames);
 		}
 	}
 }

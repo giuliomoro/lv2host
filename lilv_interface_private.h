@@ -34,5 +34,6 @@ typedef struct _lv2apply {
 	float** in_bufs;
 	float** out_bufs;
 	Port*             ports;
+	bool bypass;
 } LV2Apply;
 

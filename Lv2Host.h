@@ -33,6 +33,24 @@ public:
 	float getPortValue(unsigned int slotN, unsigned int portN);
 	int countPorts(unsigned int slotN);
 	struct portDesc getPortDesc(unsigned int slotNumber, unsigned int portNumber);
+
+	/**
+	 * Create a new audio connection between two slots.
+	 * Note that the outputPort and inputPort are indexed between 0 and
+	 * the number of output or input audio ports, respectively.
+	 */
+	bool connect(unsigned int outSlotNumber, unsigned int outputPort, unsigned int inSlotNumber, unsigned int inputPort);
+	/**
+	 * Disconnect an audio connection between two slots.
+	 * Note that the inputPort is indexed between 0 and
+	 * the number of input audio ports.
+	 */
+	bool disconnect(unsigned int inSlotNumber, unsigned int inputPort);
+	/**
+	 * bypass a slot. You have to manually create connections across the
+	 * slot for the signal to go through when it is bypassed.
+	 */
+	void bypass(unsigned int slotNumber, bool bypassed);
 	/** process the effect chain
 	 * @param inputs array of pointers to audio input channels (as set by setup())
 	 * @param outputs array of pointers to audio output channels (as set by setup())
