@@ -1,7 +1,6 @@
 #include <Bela.h>
 #include <vector>
 #include "Lv2Host.h"
-#include <libraries/Gui/Gui.h>
 #include <libraries/OnePole/OnePole.h>
 #include <libraries/Scope/Scope.h>
 
