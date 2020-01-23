@@ -16,6 +16,8 @@ bool Lv2Host::setup(float sampleRate, unsigned int maxBlockSize, unsigned int nA
 	this->sampleRate = sampleRate;
 	this->nAudioInputs = nAudioInputs;
 	this->nAudioOutputs = nAudioOutputs;
+	inputMap.resize(nAudioInputs);
+	outputMap.resize(nAudioOutputs);
 	symap = symap_new();
 	map.handle = symap;
 	map.map = (LV2_URID (*)(LV2_URID_Map_Handle, const char *))symap_map;
@@ -65,6 +67,11 @@ int Lv2Host::add(std::string const& pluginUri)
 			slots[idx]->out_bufs[n] = buffers.last().data();
 		}
 #endif /* ALLOCATE_INPUTS */
+		for(unsigned int n = 0; n < std::min(inputMap.size(), inAudio); ++n)
+		{
+			inputMap[n].slot = 0;
+			inputMap[n].port = n;
+		}
 	} else {
 		// connect the outputs of the previous slot to the input of the
 		// current one.
@@ -81,6 +88,12 @@ int Lv2Host::add(std::string const& pluginUri)
 			currN = std::min(currNIn - 1, n);
 			slots[idx]->in_bufs[currN] = slots[idx-1]->out_bufs[prevN];
 		}
+	}
+	// map the outputs of the last plugin to the outputs of the host
+	for(unsigned int n = 0; n < std::min(outputMap.size(), outAudio); ++n)
+	{
+		outputMap[n].slot = idx;
+		outputMap[n].port = n;
 	}
 
 	// allocate arrays for outputs
@@ -106,22 +119,35 @@ bool Lv2Host::connect(unsigned int source, unsigned int dest)
 	LV2Apply_connectPorts(slots[source]);
 }
 #endif
-bool Lv2Host::connect(unsigned int outSlotNumber, unsigned int outputPort, unsigned int inSlotNumber, unsigned int inputPort)
+bool Lv2Host::connect(int sourceSlotNumber, unsigned int sourcePort, unsigned int destinationSlotNumber, unsigned int destinationPort)
 {
 	try {
-		auto& outSlot = slots[outSlotNumber];
-		auto& inSlot = slots[inSlotNumber];
-		inSlot->in_bufs[inputPort] = outSlot->out_bufs[outputPort];
+		if(-1 == sourceSlotNumber) {
+			outputMap[sourcePort].slot = destinationSlotNumber;
+			outputMap[sourcePort].port = destinationPort;
+		} else if (slots.size() == destinationSlotNumber) {
+			inputMap[destinationPort].slot = sourceSlotNumber;
+			inputMap[destinationPort].port = sourcePort;
+		} else {
+			auto& sourceSlot = slots[sourceSlotNumber];
+			auto& destinationSlot = slots[destinationSlotNumber];
+			destinationSlot->in_bufs[destinationPort] = sourceSlot->out_bufs[sourcePort];
+		}
 	} catch (std::exception e) {
 		return false;
 	}
 	return true;
 }
 
-bool Lv2Host::disconnect(unsigned int inSlotNumber, unsigned int inputPort)
+bool Lv2Host::disconnect(unsigned int destinationSlotNumber, unsigned int destinationPort)
 {
 	try {
-		slots[inSlotNumber]->in_bufs[inputPort] = nullptr;
+		if(-1 == destinationSlotNumber) {
+			inputMap[destinationPort].slot = -1;
+		} else if(slots.size() == destinationSlotNumber) {
+			outputMap[destinationPort].slot = -1;
+		} else
+			slots[destinationSlotNumber]->in_bufs[destinationPort] = nullptr;
 	} catch (std::exception e) {
 		return false;
 	}
@@ -139,11 +165,17 @@ void Lv2Host::render(unsigned int nFrames, const float** inputs, float** outputs
 	{
 		for(unsigned int n = 0; n < nAudioInputs; ++n)
 		{
-			slots[0]->in_bufs[n] = (float*)inputs[n];
+			unsigned int slot = inputMap[n].slot;
+			unsigned int port = inputMap[n].port;
+			if(-1 != slot)
+				slots[slot]->in_bufs[port] = (float*)inputs[n];
 		}
 		for(unsigned int n = 0; n < nAudioOutputs; ++n)
 		{
-			slots.back()->out_bufs[n] = outputs[n];
+			unsigned int slot = outputMap[n].slot;
+			unsigned int port = outputMap[n].port;
+			if(-1 != slot)
+				slots[slot]->out_bufs[port] = outputs[n];
 		}
 		LV2Apply_connectPorts(slots[0]);
 		if(slots.size() > 1) {
