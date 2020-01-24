@@ -132,6 +132,8 @@ bool Lv2Host::connect(int sourceSlotNumber, unsigned int sourcePort, unsigned in
 			auto& sourceSlot = slots[sourceSlotNumber];
 			auto& destinationSlot = slots[destinationSlotNumber];
 			destinationSlot->in_bufs[destinationPort] = sourceSlot->out_bufs[sourcePort];
+			LV2Apply_connectPorts(sourceSlot);
+			LV2Apply_connectPorts(destinationSlot);
 		}
 	} catch (std::exception e) {
 		return false;
@@ -146,8 +148,15 @@ bool Lv2Host::disconnect(unsigned int destinationSlotNumber, unsigned int destin
 			inputMap[destinationPort].slot = -1;
 		} else if(slots.size() == destinationSlotNumber) {
 			outputMap[destinationPort].slot = -1;
-		} else
-			slots[destinationSlotNumber]->in_bufs[destinationPort] = nullptr;
+		} else {
+			auto& destinationSlot = slots[destinationSlotNumber];
+			destinationSlot->in_bufs[destinationPort] = nullptr;
+			LV2Apply_connectPorts(destinationSlot);
+			// TODO: this is actually leaving the outputs of the source slot
+			// connected. As a consequence, the plugin on that slot may think
+			// that it has something connected and may behave differently than
+			// if it didn't.
+		}
 	} catch (std::exception e) {
 		return false;
 	}
