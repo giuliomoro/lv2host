@@ -119,19 +119,19 @@ bool Lv2Host::connect(unsigned int source, unsigned int dest)
 	LV2Apply_connectPorts(slots[source]);
 }
 #endif
-bool Lv2Host::connect(int sourceSlotNumber, unsigned int sourcePort, unsigned int destinationSlotNumber, unsigned int destinationPort)
+bool Lv2Host::connect(int sourceSlotNumber, unsigned int sourceChannel, unsigned int destinationSlotNumber, unsigned int destinationChannel)
 {
 	try {
 		if(-1 == sourceSlotNumber) {
-			outputMap[sourcePort].slot = destinationSlotNumber;
-			outputMap[sourcePort].port = destinationPort;
+			outputMap[sourceChannel].slot = destinationSlotNumber;
+			outputMap[sourceChannel].port = destinationChannel;
 		} else if (slots.size() == destinationSlotNumber) {
-			inputMap[destinationPort].slot = sourceSlotNumber;
-			inputMap[destinationPort].port = sourcePort;
+			inputMap[destinationChannel].slot = sourceSlotNumber;
+			inputMap[destinationChannel].port = sourceChannel;
 		} else {
 			auto& sourceSlot = slots[sourceSlotNumber];
 			auto& destinationSlot = slots[destinationSlotNumber];
-			destinationSlot->in_bufs[destinationPort] = sourceSlot->out_bufs[sourcePort];
+			destinationSlot->in_bufs[destinationChannel] = sourceSlot->out_bufs[sourceChannel];
 			LV2Apply_connectPorts(sourceSlot);
 			LV2Apply_connectPorts(destinationSlot);
 		}
@@ -141,16 +141,16 @@ bool Lv2Host::connect(int sourceSlotNumber, unsigned int sourcePort, unsigned in
 	return true;
 }
 
-bool Lv2Host::disconnect(unsigned int destinationSlotNumber, unsigned int destinationPort)
+bool Lv2Host::disconnect(unsigned int destinationSlotNumber, unsigned int destinationChannel)
 {
 	try {
 		if(-1 == destinationSlotNumber) {
-			inputMap[destinationPort].slot = -1;
+			inputMap[destinationChannel].slot = -1;
 		} else if(slots.size() == destinationSlotNumber) {
-			outputMap[destinationPort].slot = -1;
+			outputMap[destinationChannel].slot = -1;
 		} else {
 			auto& destinationSlot = slots[destinationSlotNumber];
-			destinationSlot->in_bufs[destinationPort] = nullptr;
+			destinationSlot->in_bufs[destinationChannel] = nullptr;
 			LV2Apply_connectPorts(destinationSlot);
 			// TODO: this is actually leaving the outputs of the source slot
 			// connected. As a consequence, the plugin on that slot may think

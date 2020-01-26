@@ -37,26 +37,26 @@ public:
 	/**
 	 * Create a new audio connection between two slots.
 	 * Note that the sourcePort and inputPort are indexed between 0 and
-	 * the number of source or input audio ports, respectively.
+	 * the number of output or input audio ports, respectively.
 	 *
 	 * @param sourceSlotNumber the source slot you want to connect. If this is -1,
 	 * it means the inputs buffers passed to Lv2Host::render()
-	 * @param sourcePort the port of the source that you want to conenct
+	 * @param sourceChannel the audio channel of the source that you want to conenct
 	 * @param destinationSlotNumber the destination slot you want to
 	 * connect to. If this is 1 past the last slot, it means the output
 	 * buffers passed to Lv2Host::render()
-	 * @param destinationPort the port of the destination that you want to
+	 * @param destinationChannel the audio channel of the destination that you want to
 	 * connect to
 	 */
-	bool connect(int sourceSlotNumber, unsigned int sourcePort, unsigned int destinationSlotNumber, unsigned int destinationPort);
+	bool connect(int sourceSlotNumber, unsigned int sourceChannel, unsigned int destinationSlotNumber, unsigned int destinationChannel);
 	/**
 	 * Disconnect an audio connection between two slots.
-	 * Note that the destinationPort is indexed between 0 and
-	 * the number of destination audio ports.
+	 * Note that the destinationChannel is indexed between 0 and
+	 * the number of inputs audio ports.
 	 *
 	 * The parameter description is the same as for connect().
 	 */
-	bool disconnect(unsigned int destinationSlotNumber, unsigned int destinationPort);
+	bool disconnect(unsigned int destinationSlotNumber, unsigned int destinationChannel);
 	/**
 	 * bypass a slot. You have to manually create connections across the
 	 * slot for the signal to go through when it is bypassed.
