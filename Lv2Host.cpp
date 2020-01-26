@@ -127,14 +127,20 @@ bool Lv2Host::connect(unsigned int source, unsigned int dest)
 #endif
 bool Lv2Host::connect(int sourceSlotNumber, unsigned int sourceChannel, unsigned int destinationSlotNumber, unsigned int destinationChannel)
 {
+	bool done = false;
+	if(-1 == sourceSlotNumber) {
+		outputMap[sourceChannel].slot = destinationSlotNumber;
+		outputMap[sourceChannel].port = destinationChannel;
+		done = true;
+	}
+	if (slots.size() == destinationSlotNumber) {
+		inputMap[destinationChannel].slot = sourceSlotNumber;
+		inputMap[destinationChannel].port = sourceChannel;
+		done = true;
+	}
 	try {
-		if(-1 == sourceSlotNumber) {
-			outputMap[sourceChannel].slot = destinationSlotNumber;
-			outputMap[sourceChannel].port = destinationChannel;
-		} else if (slots.size() == destinationSlotNumber) {
-			inputMap[destinationChannel].slot = sourceSlotNumber;
-			inputMap[destinationChannel].port = sourceChannel;
-		} else {
+		if(!done)
+		{
 			auto& sourceSlot = slots[sourceSlotNumber];
 			auto& destinationSlot = slots[destinationSlotNumber];
 			destinationSlot->in_bufs[destinationChannel] = sourceSlot->out_bufs[sourceChannel];
@@ -180,6 +186,8 @@ void Lv2Host::render(unsigned int nFrames, const float** inputs, float** outputs
 			unsigned int port = inputMap[n].port;
 			if(kMapNotConnected == slot)
 				continue;
+			if(slots.size() == slot)// pass-through, handled below
+				continue;
 			slots[slot]->in_bufs[port] = (float*)inputs[n];
 		}
 		for(unsigned int n = 0; n < nAudioOutputs; ++n)
@@ -188,6 +196,11 @@ void Lv2Host::render(unsigned int nFrames, const float** inputs, float** outputs
 			unsigned int port = outputMap[n].port;
 			if(kMapNotConnected == slot)
 				continue;
+			if(-1 == slot) {// pass-through, handled here
+				memcpy(outputs[n], inputs[port],
+					sizeof(outputs[n][0]) * nFrames);
+				continue;
+			}
 			slots[slot]->out_bufs[port] = outputs[n];
 		}
 		LV2Apply_connectPorts(slots[0]);
