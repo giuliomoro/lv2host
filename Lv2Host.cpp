@@ -1,6 +1,7 @@
 #include <Lv2Host.h>
 #include <algorithm>
 #include "lilv_interface_private.h"
+#include <string.h>
 
 enum {kMapNotConnected = -255};
 
