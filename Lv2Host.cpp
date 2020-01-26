@@ -2,6 +2,8 @@
 #include <algorithm>
 #include "lilv_interface_private.h"
 
+enum {kMapNotConnected = -255};
+
 Lv2Host::Lv2Host(float sampleRate, unsigned int maxBlockSize, unsigned int nAudioInputs, unsigned int nAudioOutputs)
 {
 	setup(sampleRate, maxBlockSize, nAudioInputs, nAudioOutputs);
@@ -18,7 +20,7 @@ bool Lv2Host::setup(float sampleRate, unsigned int maxBlockSize, unsigned int nA
 	this->nAudioOutputs = nAudioOutputs;
 	dummyInput.resize(maxBlockSize);
 	struct map defaultMap;
-	defaultMap.slot = -1;
+	defaultMap.slot = kMapNotConnected;
 	defaultMap.port = 0;
 	inputMap.resize(nAudioInputs, defaultMap);
 	outputMap.resize(nAudioOutputs, defaultMap);
@@ -149,9 +151,9 @@ bool Lv2Host::disconnect(unsigned int destinationSlotNumber, unsigned int destin
 {
 	try {
 		if(-1 == destinationSlotNumber) {
-			inputMap[destinationChannel].slot = -1;
+			inputMap[destinationChannel].slot = kMapNotConnected;
 		} else if(slots.size() == destinationSlotNumber) {
-			outputMap[destinationChannel].slot = -1;
+			outputMap[destinationChannel].slot = kMapNotConnected;
 		} else {
 			auto& destinationSlot = slots[destinationSlotNumber];
 			destinationSlot->in_bufs[destinationChannel] = dummyInput.data();
@@ -176,15 +178,17 @@ void Lv2Host::render(unsigned int nFrames, const float** inputs, float** outputs
 		{
 			unsigned int slot = inputMap[n].slot;
 			unsigned int port = inputMap[n].port;
-			if(-1 != slot)
-				slots[slot]->in_bufs[port] = (float*)inputs[n];
+			if(kMapNotConnected == slot)
+				continue;
+			slots[slot]->in_bufs[port] = (float*)inputs[n];
 		}
 		for(unsigned int n = 0; n < nAudioOutputs; ++n)
 		{
 			unsigned int slot = outputMap[n].slot;
 			unsigned int port = outputMap[n].port;
-			if(-1 != slot)
-				slots[slot]->out_bufs[port] = outputs[n];
+			if(kMapNotConnected == slot)
+				continue;
+			slots[slot]->out_bufs[port] = outputs[n];
 		}
 		LV2Apply_connectPorts(slots[0]);
 		if(slots.size() > 1) {
