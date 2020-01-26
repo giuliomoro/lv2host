@@ -85,6 +85,7 @@ private:
 	LV2_Feature unmapFeature;
 	std::vector<const LV2_Feature*> featureList;
 	std::vector<std::vector<float>> buffers;
+	std::vector<float> dummyInput;
 	float sampleRate;
 	unsigned int maxBlockSize;
 	unsigned int nAudioInputs;

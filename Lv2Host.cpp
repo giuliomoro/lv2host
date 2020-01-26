@@ -16,8 +16,12 @@ bool Lv2Host::setup(float sampleRate, unsigned int maxBlockSize, unsigned int nA
 	this->sampleRate = sampleRate;
 	this->nAudioInputs = nAudioInputs;
 	this->nAudioOutputs = nAudioOutputs;
-	inputMap.resize(nAudioInputs);
-	outputMap.resize(nAudioOutputs);
+	dummyInput.resize(maxBlockSize);
+	struct map defaultMap;
+	defaultMap.slot = -1;
+	defaultMap.port = 0;
+	inputMap.resize(nAudioInputs, defaultMap);
+	outputMap.resize(nAudioOutputs, defaultMap);
 	symap = symap_new();
 	map.handle = symap;
 	map.map = (LV2_URID (*)(LV2_URID_Map_Handle, const char *))symap_map;
@@ -150,12 +154,8 @@ bool Lv2Host::disconnect(unsigned int destinationSlotNumber, unsigned int destin
 			outputMap[destinationChannel].slot = -1;
 		} else {
 			auto& destinationSlot = slots[destinationSlotNumber];
-			destinationSlot->in_bufs[destinationChannel] = nullptr;
+			destinationSlot->in_bufs[destinationChannel] = dummyInput.data();
 			LV2Apply_connectPorts(destinationSlot);
-			// TODO: this is actually leaving the outputs of the source slot
-			// connected. As a consequence, the plugin on that slot may think
-			// that it has something connected and may behave differently than
-			// if it didn't.
 		}
 	} catch (std::exception e) {
 		return false;
