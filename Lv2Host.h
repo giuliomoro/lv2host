@@ -77,6 +77,7 @@ private:
 	std::vector<LV2Apply*> slots;
 	std::vector<struct map> inputMap;
 	std::vector<struct map> outputMap;
+	std::vector<int> tmpModifiedSlots;
 	LilvWorld* world;
 	Symap* symap;
 	LV2_URID_Map map;
