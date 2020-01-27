@@ -22,7 +22,7 @@ bool Lv2Host::setup(float sampleRate, unsigned int maxBlockSize, unsigned int nA
 	dummyInput.resize(maxBlockSize);
 	struct map defaultMap;
 	defaultMap.slot = kMapNotConnected;
-	defaultMap.port = 0;
+	defaultMap.channel = 0;
 	inputMap.resize(nAudioInputs, defaultMap);
 	outputMap.resize(nAudioOutputs, defaultMap);
 	symap = symap_new();
@@ -79,7 +79,7 @@ int Lv2Host::add(std::string const& pluginUri)
 			// automap inputs of first plugin to audio inputs
 			if(n < inAudio) {
 				inputMap[n].slot = 0;
-				inputMap[n].port = n;
+				inputMap[n].channel = n;
 			}
 			// and, for good measure, give them a dummyInput
 			// buffer, in case they are not connected above, or
@@ -107,7 +107,7 @@ int Lv2Host::add(std::string const& pluginUri)
 	for(unsigned int n = 0; n < std::min(outputMap.size(), outAudio); ++n)
 	{
 		outputMap[n].slot = idx;
-		outputMap[n].port = n;
+		outputMap[n].channel = n;
 	}
 
 	// allocate arrays for outputs
@@ -139,12 +139,12 @@ bool Lv2Host::connect(int sourceSlotNumber, unsigned int sourceChannel, unsigned
 	bool done = false;
 	if(-1 == sourceSlotNumber) {
 		inputMap[sourceChannel].slot = destinationSlotNumber;
-		inputMap[sourceChannel].port = destinationChannel;
+		inputMap[sourceChannel].channel = destinationChannel;
 		done = true;
 	}
 	if (slots.size() == destinationSlotNumber) {
 		outputMap[destinationChannel].slot = sourceSlotNumber;
-		outputMap[destinationChannel].port = sourceChannel;
+		outputMap[destinationChannel].channel = sourceChannel;
 		done = true;
 	}
 	try {
@@ -193,7 +193,7 @@ void Lv2Host::render(unsigned int nFrames, const float** inputs, float** outputs
 		for(unsigned int n = 0; n < nAudioInputs; ++n)
 		{
 			int slot = inputMap[n].slot;
-			int channel = inputMap[n].port;
+			int channel = inputMap[n].channel;
 			if(kMapNotConnected == slot)
 				continue;
 			if(slots.size() == slot)// pass-through, handled below
@@ -204,7 +204,7 @@ void Lv2Host::render(unsigned int nFrames, const float** inputs, float** outputs
 		for(unsigned int n = 0; n < nAudioOutputs; ++n)
 		{
 			int slot = outputMap[n].slot;
-			int channel = outputMap[n].port;
+			int channel = outputMap[n].channel;
 			if(kMapNotConnected == slot)
 				continue;
 			if(-1 == slot) {// pass-through, handled here

@@ -72,7 +72,7 @@ public:
 private:
 	struct map {
 		int slot;
-		int port;
+		int channel;
 	};
 	std::vector<LV2Apply*> slots;
 	std::vector<struct map> inputMap;
